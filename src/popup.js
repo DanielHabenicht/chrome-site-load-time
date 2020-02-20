@@ -18,93 +18,90 @@ through which recipients can access the Corresponding Source.
 
 */
 
-document.addEventListener('DOMContentLoaded', function () {
-    var btnreset = document.getElementById("btnreset");
-    btnreset.addEventListener('click', resetStats);
+document.addEventListener('DOMContentLoaded', function() {
+  var btnreset = document.getElementById('btnreset');
+  btnreset.addEventListener('click', resetStats);
 });
 
 function resetStats() {
-    chrome.storage.local.clear();
+  chrome.storage.local.clear();
 
-    removeEntries();
+  removeEntries();
 }
 
-chrome.tabs.getSelected(null, function (tab) {
-    addEntries();
+chrome.tabs.getSelected(null, function(tab) {
+  addEntries();
 });
 
 function getTimingSum(timing_entries) {
-    var total_sum = 0;
-    for(var i = 0; i < timing_entries.length; i++)
-    {
-        var timing_entry = timing_entries[i];
-        var t = timing_entry.timing;
-        var start = t.redirectStart == 0 ? t.fetchStart : t.redirectStart;
-        var total = t.loadEventEnd - start;
+  var total_sum = 0;
+  for (var i = 0; i < timing_entries.length; i++) {
+    var timing_entry = timing_entries[i];
+    var t = timing_entry.timing;
+    var start = t.redirectStart == 0 ? t.fetchStart : t.redirectStart;
+    var total = t.loadEventEnd - start;
 
-        total_sum += total;
-    }
+    total_sum += total;
+  }
 
-    return total_sum;
+  return total_sum;
 }
 
 function addEntries() {
-    chrome.storage.local.get('cache', function(data) {
-        // build the html from the site data
-        var timing_table = document.getElementById('timing_table');
+  chrome.storage.local.get('cache', function(data) {
+    // build the html from the site data
+    var timing_table = document.getElementById('timing_table');
 
-        // convert entries into an array and sort them
-        var sortable = [];
-        for (var entry in data.cache) {
-            sortable.push([entry, data.cache[entry]]);
-        }
+    // convert entries into an array and sort them
+    var sortable = [];
+    for (var entry in data.cache) {
+      sortable.push([entry, data.cache[entry]]);
+    }
 
-        sortable.sort(function(a, b) {
-            var a_sum = getTimingSum(a[1]);
-            var b_sum = getTimingSum(b[1]);
-            return (a_sum > b_sum) ? 1 : ((b_sum > a_sum) ? -1 : 0);
-        });
-
-        sortable.reverse();
-
-        for(var i = 0; i < sortable.length; i++)
-        {
-            var entry = sortable[i];
-
-            var row = timing_table.insertRow(-1);
-            if((i % 2) == 0)
-            {
-                row.classList.add('even');
-            } else
-            {
-                row.classList.add('odd');
-            }
-
-            // Insert new cells (<td> elements) at the 1st and 2nd position of the "new" <tr> element:
-            var cell1 = row.insertCell(0);
-            var cell2 = row.insertCell(1);
-            var cell3 = row.insertCell(2);
-
-            var host = entry[0];
-            var host_entry = entry[1];
-
-            timing_sum = getTimingSum(host_entry);
-
-            // Add some text to the new cells:
-            cell1.innerHTML = "<div class='host' title='" + host + "'>" + host + "</div>";
-            cell2.innerHTML = timing_sum;
-            cell3.innerHTML = host_entry.length;
-        }
+    sortable.sort(function(a, b) {
+      var a_sum = getTimingSum(a[1]);
+      var b_sum = getTimingSum(b[1]);
+      return a_sum > b_sum ? 1 : b_sum > a_sum ? -1 : 0;
     });
+
+    sortable.reverse();
+
+    for (var i = 0; i < sortable.length; i++) {
+      var entry = sortable[i];
+
+      var row = timing_table.insertRow(-1);
+      if (i % 2 == 0) {
+        row.classList.add('even');
+      } else {
+        row.classList.add('odd');
+      }
+
+      // Insert new cells (<td> elements) at the 1st and 2nd position of the "new" <tr> element:
+      var cell1 = row.insertCell(0);
+      var cell2 = row.insertCell(1);
+      var cell3 = row.insertCell(2);
+      var cell4 = row.insertCell(3);
+
+      var host = entry[0];
+      var host_entry = entry[1];
+
+      timing_sum = getTimingSum(host_entry);
+
+      // Add some text to the new cells:
+      cell1.innerHTML = "<div class='host' title='" + host + "'>" + host + '</div>';
+      cell2.innerHTML = timing_sum;
+      cell3.innerHTML = host_entry.length;
+      cell4.innerHTML = timing_sum / 1000 / host_entry.length;
+    }
+  });
 }
 
 /* Remove all of the entry rows in the table */
 function removeEntries() {
-    var timing_table = document.getElementById('timing_table');
-    var row_count = timing_table.rows.length;
+  var timing_table = document.getElementById('timing_table');
+  var row_count = timing_table.rows.length;
 
-    for(var i = 0; i < row_count; i++)
-    {
-        timing_table.deleteRow(-1);
-    }
+  for (var i = 0; i < row_count; i++) {
+    timing_table.deleteRow(-1);
+  }
 }
